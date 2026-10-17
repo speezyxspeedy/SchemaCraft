@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SchemaCraft — Visual Database Schema Designer</title>
+  <meta name="description" content="Professional visual database schema designer and SQL DDL generator. Design tables, create relationships, and export clean SQL.">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app" class="app-container">
+    <!-- TOP TOOLBAR -->
+    <header class="top-toolbar" id="topToolbar">
+      <div class="toolbar-left">
+        <button id="toggleLeftSidebarBtn" class="btn-icon" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div class="logo-wrapper">
+          <div class="logo-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M3 9h18M3 15h18M9 9v12"/>
+            </svg>
+          </div>
+          <span class="logo-title">SchemaCraft</span>
+          <span class="badge badge-subtle">v1.0</span>
+        </div>
+        <div class="divider-vertical"></div>
+        <div class="project-title-container">
+          <input type="text" id="projectTitleInput" class="project-title-input" value="Untitled Schema" spellcheck="false" title="Click to rename project" />
+          <span id="saveStatusIndicator" class="save-status saved" title="Auto-saved to local storage">
+            <span class="dot"></span> Saved
+          </span>
+        </div>
+      </div>
+
+      <div class="toolbar-center">
+        <!-- History controls -->
+        <div class="btn-group">
+          <button id="undoBtn" class="btn btn-secondary btn-sm" title="Undo (Ctrl+Z)" disabled>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 1 1 2.7 6.3L3 13"/></svg>
+            <span>Undo</span>
+          </button>
+          <button id="redoBtn" class="btn btn-secondary btn-sm" title="Redo (Ctrl+Y)" disabled>
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6"/><path d="M21 13a9 9 0 1 0-2.7 6.3L21 13"/></svg>
+            <span>Redo</span>
+          </button>
+        </div>
+
+        <div class="divider-vertical"></div>
+
+        <!-- Canvas quick tools -->
+        <button id="addTableToolbarBtn" class="btn btn-primary btn-sm" title="Add New Table (N)">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <span>New Table</span>
+        </button>
+
+        <button id="templatesBtn" class="btn btn-secondary btn-sm" title="Load Starter Schema Template">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          <span>Templates</span>
+        </button>
+      </div>
+
+      <div class="toolbar-right">
+        <!-- Export & Project Actions -->
+        <button id="exportSqlBtn" class="btn btn-secondary btn-sm" title="Generate & Export SQL DDL">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <span>Export SQL</span>
+        </button>
+
+        <div class="dropdown" id="exportDropdown">
+          <button id="exportMenuBtn" class="btn btn-secondary btn-sm" title="More Export Options">
+            <span>Export</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-right" id="exportDropdownMenu">
+            <button class="dropdown-item" id="exportJsonBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export Schema (JSON)
+            </button>
+            <button class="dropdown-item" id="importJsonBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Import Schema (JSON)
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item" id="exportSvgBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+              Export Diagram (SVG)
+            </button>
+            <button class="dropdown-item" id="exportPngBtn">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Export Image (PNG)
+            </button>
+          </div>
+        </div>
+
+        <button id="saveProjectBtn" class="btn btn-secondary btn-sm" title="Force Save Project">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          <span>Save</span>
+        </button>
+
+        <div class="divider-vertical"></div>
+
+        <!-- Theme toggle -->
+        <button id="themeToggleBtn" class="btn-icon" title="Toggle Light/Dark Theme" aria-label="Toggle Light/Dark Theme">
+          <svg class="theme-icon-dark" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="theme-icon-light" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
+
+        <button id="toggleRightPanelBtn" class="btn-icon" title="Toggle Properties Panel" aria-label="Toggle Properties Panel">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- MAIN WORKSPACE -->
+    <div class="workspace-body">
+      <!-- LEFT SIDEBAR -->
+      <aside class="left-sidebar" id="leftSidebar">
+        <!-- Sidebar Navigation Tabs -->
+        <div class="sidebar-tabs">
+          <button class="tab-btn active" data-tab="tablesTab">Tables (<span id="tableCountBadge">0</span>)</button>
+          <button class="tab-btn" data-tab="projectsTab">Projects</button>
+        </div>
+
+        <!-- TABLES TAB -->
+        <div class="tab-content active" id="tablesTab">
+          <div class="sidebar-search-box">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="tableSearchInput" placeholder="Filter tables or columns..." />
+            <button id="clearSearchBtn" class="btn-clear hidden">&times;</button>
+          </div>
+
+          <div class="sidebar-section-header">
+            <span class="section-title">SCHEMA TABLES</span>
+            <button id="quickAddTableBtn" class="btn-icon-xs" title="Create Table">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+
+          <!-- Tables list -->
+          <div class="tables-tree-container" id="tablesList">
+            <!-- Dynamic list of tables populated by JS -->
+          </div>
+
+          <!-- Empty state for tables -->
+          <div class="empty-state-card hidden" id="noTablesState">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+            </div>
+            <p class="empty-title">No tables yet</p>
+            <p class="empty-desc">Create your first database table or load a starter template.</p>
+            <button class="btn btn-primary btn-xs" id="emptyStateAddBtn">+ Add Table</button>
+          </div>
+
+          <!-- Relationship Summary -->
+          <div class="sidebar-section-header margin-top-lg">
+            <span class="section-title">RELATIONSHIPS (<span id="relCountBadge">0</span>)</span>
+          </div>
+          <div class="relationships-list-container" id="relationshipsList">
+            <!-- Dynamic relationships list -->
+          </div>
+        </div>
+
+        <!-- SAVED PROJECTS TAB -->
+        <div class="tab-content" id="projectsTab">
+          <div class="sidebar-section-header">
+            <span class="section-title">SAVED SCHEMAS</span>
+            <button id="newProjectBtn" class="btn-icon-xs" title="Create Blank Project">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+          </div>
+          <div class="projects-list-container" id="projectsList">
+            <!-- Populated by JS -->
+          </div>
+          
+          <div class="sidebar-section-header margin-top-lg">
+            <span class="section-title">STARTER TEMPLATES</span>
+          </div>
+          <div class="templates-preset-list">
+            <div class="template-card" data-template="ecommerce">
+              <div class="template-badge">Popular</div>
+              <div class="template-name">E-Commerce & Orders</div>
+              <div class="template-desc">Users, Products, Orders, Items & Reviews (5 tables)</div>
+            </div>
+            <div class="template-card" data-template="saas">
+              <div class="template-badge">SaaS</div>
+              <div class="template-name">SaaS Auth & Billing</div>
+              <div class="template-desc">Workspaces, Members, Plans, Subscriptions (4 tables)</div>
+            </div>
+            <div class="template-card" data-template="blog">
+              <div class="template-badge">Content</div>
+              <div class="template-name">Blog & Publishing</div>
+              <div class="template-desc">Authors, Posts, Categories, Comments, Tags (5 tables)</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- CENTRAL CANVAS -->
+      <main class="canvas-wrapper" id="canvasWrapper">
+        <!-- SVG background pattern & diagram layer -->
+        <div class="canvas-viewport" id="canvasViewport">
+          <!-- Transformed canvas plane for Pan & Zoom -->
+          <div class="canvas-plane" id="canvasPlane">
+            <!-- Grid SVG background -->
+            <svg class="canvas-grid-svg" id="canvasGridSvg" width="100%" height="100%">
+              <defs>
+                <pattern id="canvasGridSmall" width="20" height="20" patternUnits="userSpaceOnUse">
+                  <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--canvas-grid-subtle)" stroke-width="0.75" />
+                </pattern>
+                <pattern id="canvasGridLarge" width="100" height="100" patternUnits="userSpaceOnUse">
+                  <rect width="100" height="100" fill="url(#canvasGridSmall)" />
+                  <path d="M 100 0 L 0 0 0 100" fill="none" stroke="var(--canvas-grid-strong)" stroke-width="1.2" />
+                </pattern>
+                <!-- Arrow markers for relationships -->
+                <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <polygon points="0 0, 8 4, 0 8" fill="var(--connector-line-color)" />
+                </marker>
+                <marker id="arrowhead-active" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <polygon points="0 0, 8 4, 0 8" fill="var(--color-primary)" />
+                </marker>
+              </defs>
+              <rect width="100000" height="100000" x="-50000" y="-50000" fill="url(#canvasGridLarge)" />
+            </svg>
+
+            <!-- SVG Connectors Layer -->
+            <svg class="canvas-connections-svg" id="connectionsSvg">
+              <!-- Rendered relation bezier curves -->
+              <g id="connectionsGroup"></g>
+              <!-- Live drag connection line when dragging port -->
+              <path id="tempConnectionPath" class="temp-connection-path" d="" />
+            </svg>
+
+            <!-- HTML Tables Card Container -->
+            <div class="tables-cards-container" id="tablesCardsContainer">
+              <!-- Table DOM nodes rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Canvas Floating Control HUD -->
+        <div class="canvas-controls-hud">
+          <div class="hud-group">
+            <button id="zoomOutBtn" class="btn-icon-hud" title="Zoom Out (-)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <span id="zoomLevelDisplay" class="zoom-display">100%</span>
+            <button id="zoomInBtn" class="btn-icon-hud" title="Zoom In (+)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+            <div class="hud-divider"></div>
+            <button id="fitScreenBtn" class="btn-icon-hud" title="Fit to Screen (F)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><polyline points="21 15 21 21 15 21"/><polyline points="3 9 3 3 9 3"/></svg>
+            </button>
+            <button id="resetViewBtn" class="btn-icon-hud" title="Reset View (1:1)">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/></svg>
+            </button>
+            <button id="snapGridBtn" class="btn-icon-hud active" title="Toggle Snap to Grid">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Connection helper toast -->
+        <div id="dragConnectionToast" class="connection-toast hidden">
+          <span>Connecting relation... Click on target column port or press <b>Esc</b> to cancel</span>
+        </div>
+
+        <!-- Interactive Minimap -->
+        <div class="canvas-minimap-container" id="minimapContainer">
+          <div class="minimap-header">
+            <span>MINIMAP</span>
+            <button id="toggleMinimapBtn" class="btn-icon-xs">&times;</button>
+          </div>
+          <div class="minimap-canvas-wrapper" id="minimapWrapper">
+            <svg class="minimap-svg" id="minimapSvg" viewBox="0 0 200 130">
+              <rect width="200" height="130" fill="var(--minimap-bg)" />
+              <g id="minimapTablesGroup"></g>
+              <rect id="minimapViewportRect" class="minimap-viewport" x="0" y="0" width="40" height="30" />
+            </svg>
+          </div>
+        </div>
+      </main>
+
+      <!-- RIGHT PROPERTIES PANEL -->
+      <aside class="right-properties-panel" id="rightPropertiesPanel">
+        <!-- Panel Header -->
+        <div class="panel-header">
+          <div class="panel-header-title">
+            <span id="panelModeBadge" class="badge badge-primary">TABLE</span>
+            <span id="panelTitle">Inspector</span>
+          </div>
+          <button id="closePropertiesBtn" class="btn-icon-xs" title="Close Panel">&times;</button>
+        </div>
+
+        <!-- TABLE INSPECTOR CONTENT -->
+        <div class="panel-content" id="tableInspectorContent">
+          <!-- General Table Settings -->
+          <div class="property-group">
+            <label class="form-label" for="propTableName">Table Name</label>
+            <div class="input-with-action">
+              <input type="text" id="propTableName" class="form-input" placeholder="e.g. users" spellcheck="false" />
+            </div>
+            <span class="field-help" id="tableNameError"></span>
+          </div>
+
+          <div class="property-group">
+            <label class="form-label" for="propTableColor">Accent Color</label>
+            <div class="color-picker-row">
+              <div class="color-swatch-picker" id="colorSwatchPicker">
+                <!-- Color swatches generated by JS -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Columns Manager -->
+          <div class="property-group columns-section">
+            <div class="columns-header-row">
+              <span class="form-label mb-0">Columns (<span id="propColumnCount">0</span>)</span>
+              <button id="addColumnBtn" class="btn btn-primary btn-xs">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Column
+              </button>
+            </div>
+
+            <div class="columns-table-container">
+              <table class="columns-editor-table" id="columnsEditorTable">
+                <thead>
+                  <tr>
+                    <th style="width: 28px;">PK</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th style="width: 32px;" title="Not Null">NN</th>
+                    <th style="width: 32px;" title="Unique">UQ</th>
+                    <th style="width: 24px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="columnsEditorBody">
+                  <!-- Generated dynamic rows -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Active Column Details Accordion -->
+          <div class="property-group column-details-box" id="activeColumnDetailsBox">
+            <div class="details-box-header">
+              <span class="details-box-title" id="activeColTitle">Column Settings</span>
+              <span class="badge badge-subtle" id="activeColTypeBadge">VARCHAR</span>
+            </div>
+            <div class="details-box-body">
+              <div class="form-row">
+                <div class="form-col">
+                  <label class="form-label-sm" for="colDefaultInput">Default Value</label>
+                  <input type="text" id="colDefaultInput" class="form-input-sm" placeholder="e.g. 0, 'active', CURRENT_TIMESTAMP" />
+                </div>
+              </div>
+              <div class="form-row margin-top-sm">
+                <div class="checkbox-tag-group">
+                  <label class="checkbox-tag">
+                    <input type="checkbox" id="colPkCheckbox" />
+                    <span>Primary Key</span>
+                  </label>
+                  <label class="checkbox-tag">
+                    <input type="checkbox" id="colNnCheckbox" />
+                    <span>Not Null</span>
+                  </label>
+                  <label class="checkbox-tag">
+                    <input type="checkbox" id="colUqCheckbox" />
+                    <span>Unique</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Relationships involving this table -->
+          <div class="property-group">
+            <div class="columns-header-row">
+              <span class="form-label mb-0">Connected Relations</span>
+              <button id="addRelationBtn" class="btn btn-secondary btn-xs">+ Add Relation</button>
+            </div>
+            <div class="table-relations-list" id="tableConnectedRelationsList">
+              <!-- Dynamically populated list -->
+            </div>
+          </div>
+
+          <!-- Table Actions -->
+          <div class="property-group margin-top-auto border-top-divider pt-3">
+            <button id="deleteTableBtn" class="btn btn-danger-outline btn-block">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              Delete Table
+            </button>
+          </div>
+        </div>
+
+        <!-- RELATIONSHIP INSPECTOR CONTENT -->
+        <div class="panel-content hidden" id="relationshipInspectorContent">
+          <div class="property-group">
+            <label class="form-label">Source Table & Column (Foreign Key)</label>
+            <div class="relation-endpoint-badge" id="relSourceInfo">orders.user_id</div>
+          </div>
+
+          <div class="property-group">
+            <label class="form-label">Target Table & Column (Primary Key)</label>
+            <div class="relation-endpoint-badge" id="relTargetInfo">users.id</div>
+          </div>
+
+          <div class="property-group">
+            <label class="form-label" for="relCardinalitySelect">Cardinality</label>
+            <select id="relCardinalitySelect" class="form-select">
+              <option value="1:N">One to Many (1 : N)</option>
+              <option value="1:1">One to One (1 : 1)</option>
+              <option value="N:M">Many to Many (N : M)</option>
+            </select>
+          </div>
+
+          <div class="property-group">
+            <label class="form-label" for="relOnDeleteSelect">ON DELETE</label>
+            <select id="relOnDeleteSelect" class="form-select">
+              <option value="CASCADE">CASCADE</option>
+              <option value="SET NULL">SET NULL</option>
+              <option value="RESTRICT">RESTRICT</option>
+              <option value="NO ACTION">NO ACTION</option>
+            </select>
+          </div>
+
+          <div class="property-group">
+            <label class="form-label" for="relOnUpdateSelect">ON UPDATE</label>
+            <select id="relOnUpdateSelect" class="form-select">
+              <option value="CASCADE">CASCADE</option>
+              <option value="RESTRICT">RESTRICT</option>
+              <option value="SET NULL">SET NULL</option>
+              <option value="NO ACTION">NO ACTION</option>
+            </select>
+          </div>
+
+          <div class="property-group margin-top-auto border-top-divider pt-3">
+            <button id="deleteRelationBtn" class="btn btn-danger-outline btn-block">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Delete Relationship
+            </button>
+          </div>
+        </div>
+
+        <!-- EMPTY SELECTION STATE -->
+        <div class="panel-content" id="noSelectionContent">
+          <div class="inspector-empty-state">
+            <div class="empty-icon-lg">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+            </div>
+            <h3>No Element Selected</h3>
+            <p>Click on any table card or relationship connector line to inspect and configure its attributes.</p>
+            <div class="quick-shortcuts-list">
+              <div class="shortcut-item"><kbd>Double Click</kbd> <span>Create new table</span></div>
+              <div class="shortcut-item"><kbd>Drag Port</kbd> <span>Create relationship</span></div>
+              <div class="shortcut-item"><kbd>Ctrl + Z</kbd> <span>Undo changes</span></div>
+              <div class="shortcut-item"><kbd>Space + Drag</kbd> <span>Pan canvas</span></div>
+              <div class="shortcut-item"><kbd>F</kbd> <span>Fit to screen</span></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- MODAL: EXPORT SQL DDL -->
+    <div class="modal-overlay hidden" id="sqlExportModal">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <div class="modal-title-with-icon">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <h2>Export SQL Schema</h2>
+          </div>
+          <button class="btn-icon-close modal-close-trigger">&times;</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="sql-options-bar">
+            <div class="dialect-tabs" id="dialectTabs">
+              <button class="dialect-tab active" data-dialect="postgres">PostgreSQL</button>
+              <button class="dialect-tab" data-dialect="mysql">MySQL</button>
+              <button class="dialect-tab" data-dialect="sqlite">SQLite</button>
+            </div>
+            <div class="sql-toggles">
+              <label class="checkbox-inline">
+                <input type="checkbox" id="sqlDropTablesToggle" checked />
+                <span>DROP TABLE IF EXISTS</span>
+              </label>
+              <label class="checkbox-inline">
+                <input type="checkbox" id="sqlFkConstraintsToggle" checked />
+                <span>Foreign Keys</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="code-preview-container">
+            <pre class="code-preview"><code id="sqlOutputCode">-- Generating schema...</code></pre>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <span class="footer-hint">Ready for PostgreSQL, Supabase, MySQL & SQLite</span>
+          <div class="btn-group">
+            <button class="btn btn-secondary modal-close-trigger">Cancel</button>
+            <button id="copySqlBtn" class="btn btn-secondary">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              Copy SQL
+            </button>
+            <button id="downloadSqlBtn" class="btn btn-primary">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download .sql
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: ADD RELATIONSHIP INTERACTIVE -->
+    <div class="modal-overlay hidden" id="addRelationModal">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h2>Create Relationship</h2>
+          <button class="btn-icon-close modal-close-trigger">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="createRelationForm">
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label class="form-label" for="relModalSourceTable">Source Table (Foreign Key)</label>
+                <select id="relModalSourceTable" class="form-select"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="relModalSourceColumn">Source Column</label>
+                <select id="relModalSourceColumn" class="form-select"></select>
+              </div>
+            </div>
+
+            <div class="relation-connector-preview">
+              <svg viewBox="0 0 100 24" width="100" height="24">
+                <line x1="10" y1="12" x2="90" y2="12" stroke="var(--color-primary)" stroke-width="2" stroke-dasharray="4" />
+                <polygon points="85 8, 93 12, 85 16" fill="var(--color-primary)" />
+              </svg>
+            </div>
+
+            <div class="form-row-2col">
+              <div class="form-group">
+                <label class="form-label" for="relModalTargetTable">Target Table (Primary Key)</label>
+                <select id="relModalTargetTable" class="form-select"></select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="relModalTargetColumn">Target Column</label>
+                <select id="relModalTargetColumn" class="form-select"></select>
+              </div>
+            </div>
+
+            <div class="form-row-2col margin-top-md">
+              <div class="form-group">
+                <label class="form-label" for="relModalCardinality">Cardinality</label>
+                <select id="relModalCardinality" class="form-select">
+                  <option value="1:N">One to Many (1 : N)</option>
+                  <option value="1:1">One to One (1 : 1)</option>
+                  <option value="N:M">Many to Many (N : M)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="relModalOnDelete">ON DELETE Action</label>
+                <select id="relModalOnDelete" class="form-select">
+                  <option value="CASCADE">CASCADE</option>
+                  <option value="SET NULL">SET NULL</option>
+                  <option value="RESTRICT">RESTRICT</option>
+                  <option value="NO ACTION">NO ACTION</option>
+                </select>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary modal-close-trigger">Cancel</button>
+          <button id="saveRelationModalBtn" class="btn btn-primary">Connect Relationship</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL: CONFIRMATION / DANGER WARNING -->
+    <div class="modal-overlay hidden" id="confirmModal">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-header">
+          <div class="warning-title-row">
+            <div class="warning-icon-wrapper">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <h2 id="confirmModalTitle">Confirm Action</h2>
+          </div>
+          <button class="btn-icon-close modal-close-trigger">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p id="confirmModalMessage" class="confirm-message">Are you sure you want to proceed?</p>
+          <div id="confirmModalWarningBox" class="warning-callout hidden">
+            <!-- Warning details -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary modal-close-trigger" id="confirmCancelBtn">Cancel</button>
+          <button class="btn btn-danger" id="confirmActionBtn">Proceed</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hidden file input for JSON import -->
+    <input type="file" id="jsonFileInput" accept=".json" style="display: none;" />
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+  </div>
+
+  <!-- SCRIPTS -->
+  <script src="js/state.js"></script>
+  <script src="js/sql-generator.js"></script>
+  <script src="js/storage-templates.js"></script>
+  <script src="js/table-manager.js"></script>
+  <script src="js/properties-panel.js"></script>
+  <script src="js/canvas.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
